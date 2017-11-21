@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import random
 
 import torchvision
+import os
 import torchvision.transforms as transforms
 from utils import progress_bar
 
@@ -90,15 +91,17 @@ class BinaryConvLayer(nn.Conv2d):
 
 
 class MyNetwork(nn.Module):
-    def __init__(self):
+    def __init__(self, binary):
         super(MyNetwork, self).__init__()
 
-        self.conv1 = BinaryConvLayer(3,6,5,1,True)
-        self.conv2 = BinaryConvLayer(6, 16, 5, 1, True)
+        self.binary = binary
 
-        self.bc1 = BinaryLayer(16*5*5, 120, 1, True)
-        self.bc2 = BinaryLayer(120, 84, 1, True)
-        self.bc3 = BinaryLayer(84, 10, 1, True)
+        self.conv1 = BinaryConvLayer(3,6,5,1, self.binary)
+        self.conv2 = BinaryConvLayer(6, 16, 5, 1, self.binary)
+
+        self.bc1 = BinaryLayer(16*5*5, 120, 1, self.binary)
+        self.bc2 = BinaryLayer(120, 84, 1, self.binary)
+        self.bc3 = BinaryLayer(84, 10, 1, self.binary)
 
     
     def forward(self, x):
@@ -166,14 +169,17 @@ if __name__ == "__main__":
 
     #bd_layer = BinaryLayer(3, 4, 1, True)
 
-    net = MyNetwork()
+    net = MyNetwork(False)
     print(net) 
     criterion = nn.CrossEntropyLoss()
-    optimizer = ClippedOptimizer(net.parameters(), 1, 0.0001, True)
+    optimizer = ClippedOptimizer(net.parameters(), 1, 0.001, False)
 
     start_epoch = 1
-    for epoch in range(start_epoch, start_epoch+400):
+    best_acc = 0
+
+    for epoch in range(start_epoch, start_epoch+100):
         print('\nEpoch: %d' % epoch)
+
         net.train()
         train_loss = 0
         correct = 0
@@ -183,30 +189,6 @@ if __name__ == "__main__":
         batch_idx = 0
         inputs = None
         targets = None
-        for idx, (inp, outp) in enumerate(trainloader):
-            batch_idx = idx
-            inputs = inp
-            targets = outp
-            break
-
-        '''
-        #(inputs, targets) = trainloader[0]
-        # batch_idx = 0
-        optimizer.zero_grad()
-        inputs, targets = Variable(inputs), Variable(targets)
-        outputs = net(inputs)
-        loss = criterion(outputs, targets)
-        loss.backward()
-        optimizer.step()
-
-        train_loss += loss.data[0]
-        _, predicted = torch.max(outputs.data, 1)
-        total += targets.size(0)
-        correct += predicted.eq(targets.data).cpu().sum()
-
-        progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-            % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
-        '''
 
         for batch_idx, (inputs, targets) in enumerate(trainloader):
             optimizer.zero_grad()
@@ -224,9 +206,44 @@ if __name__ == "__main__":
             total += targets.size(0)
             correct += predicted.eq(targets.data).cpu().sum()
 
-        progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-            % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+            progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+                % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+        
+        train_acc = 100.*correct/total
 
+        net.eval()
+        test_loss = 0
+        correct = 0
+        total = 0
+        for batch_idx, (inputs, targets) in enumerate(testloader):
+
+            inputs, targets = Variable(inputs, volatile=True), Variable(targets)
+            outputs = net(inputs)
+            loss = criterion(outputs, targets)
+
+            test_loss += loss.data[0]
+            _, predicted = torch.max(outputs.data, 1)
+            total += targets.size(0)
+            correct += predicted.eq(targets.data).cpu().sum()
+
+            progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+                % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+        
+        test_acc = 100.*correct/total 
+        print("Epoch, Training accuracy, Test Accuracy", epoch, train_acc, test_acc)
+        acc = 100.*correct/total
+        if acc > best_acc:
+            print('Saving..')
+            state = {
+                'net': net,
+                'acc': acc,
+                'epoch': epoch,
+            }
+            if not os.path.isdir('checkpoint'):
+                os.mkdir('checkpoint')
+            torch.save(state, './checkpoint/ckpt.t7')
+            best_acc = acc
+        
         
     '''
     mynet = MyNetwork()
