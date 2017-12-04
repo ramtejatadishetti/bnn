@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
+from custom import *
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
@@ -49,97 +50,101 @@ test_loader = torch.utils.data.DataLoader(
     batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
 
-class BinarizeWeights(torch.autograd.Function):
-    def __init__(self):
-        super(BinarizeWeights, self).__init__()
+# class BinarizeWeights(torch.autograd.Function):
+#     def __init__(self):
+#         super(BinarizeWeights, self).__init__()
     
-    def forward(self, input, S):
-        self.save_for_backward(S)
-        res = torch.sign(input)
-        return res
+#     def forward(self, input, S):
+#         self.save_for_backward(S)
+#         res = torch.sign(input)
+#         return res
 
-    def backward(self, grad_output):
-        """
-        In the backward pass we receive a Tensor containing the gradient of the loss
-        with respect to the output, and we need to compute the gradient of the loss
-        with respect to the input.
-        """
-        S, = self.saved_tensors
-        grad_input = torch.mm(grad_output, S)
-        return grad_input
+#     def backward(self, grad_output):
+#         """
+#         In the backward pass we receive a Tensor containing the gradient of the loss
+#         with respect to the output, and we need to compute the gradient of the loss
+#         with respect to the input.
+#         """
+#         S, = self.saved_tensors
+#         grad_input = torch.mm(grad_output, S)
+#         return grad_input
 
-class BinaryConv2DLayer(nn.Conv2d):
-    #initialize the Binary Layer where weights are binarized
-    def __init__(self, input_dim, output_dim, **kwargs):
-        super(BinaryConv2DLayer, self).__init__(input_dim, output_dim, **kwargs)
+# class BinaryConv2DLayer(nn.Conv2d):
+#     #initialize the Binary Layer where weights are binarized
+#     def __init__(self, input_dim, output_dim, **kwargs):
+#         super(BinaryConv2DLayer, self).__init__(input_dim, output_dim, **kwargs)
         
-    def forward(self, x):
-        self.new_weight = BinarizeWeights().forward(self.weight,x)
-        backup_weight = self.weight.data
-        self.weight.data = self.new_weight.data
-        out = super(BinaryConv2DLayer, self).forward(x)
-        return out
+#     def forward(self, x):
+#         self.new_weight = BinarizeWeights().forward(self.weight,x)
+#         backup_weight = self.weight.data
+#         self.weight.data = self.new_weight.data
+#         out = super(BinaryConv2DLayer, self).forward(x)
+#         return out
 
     
 
-class BinaryLayer(nn.Linear):
-    #initialize the Binary Layer where weights are binarized
-    def __init__(self, input_dim, output_dim):
-        super(BinaryLayer, self).__init__(input_dim, output_dim)
+# class BinaryLayer(nn.Linear):
+#     #initialize the Binary Layer where weights are binarized
+#     def __init__(self, input_dim, output_dim):
+#         super(BinaryLayer, self).__init__(input_dim, output_dim)
         
-    def forward(self, x):
-        self.new_weight = BinarizeWeights().forward(self.weight,x)
-        # print self.new_weight.grad_fn
-        backup_weight = self.weight.data
-        self.weight.data = self.new_weight.data
-        out = super(BinaryLayer, self).forward(x)
-        return out
+#     def forward(self, x):
+#         self.new_weight = BinarizeWeights().forward(self.weight,x)
+#         # print self.new_weight.grad_fn
+#         backup_weight = self.weight.data
+#         self.weight.data = self.new_weight.data
+#         out = super(BinaryLayer, self).forward(x)
+#         return out
 
 
-class Binaryactivation(torch.autograd.Function):
-    #initialize the Binary Activation Function after Tanh
-    def __init__(self):
-        super(Binaryactivation, self).__init__()
+# class Binaryactivation(torch.autograd.Function):
+#     #initialize the Binary Activation Function after Tanh
+#     def __init__(self):
+#         super(Binaryactivation, self).__init__()
         
-    def forward(self, input):
-        self.save_for_backward(input)
-        out = torch.sign(input)
-        return out
+#     def forward(self, input):
+#         self.save_for_backward(input)
+#         out = torch.sign(input)
+#         return out
     
-    def backward(self, grad_output):
-        """
-        In the backward pass we receive a Tensor containing the gradient of the loss
-        with respect to the output, and we need to compute the gradient of the loss
-        with respect to the input.
-        """
-        input, = self.saved_tensors
-        grad_input = grad_output.clone()
-        grad_input[torch.abs(input) >= 1] = 0
-        return grad_input
+#     def backward(self, grad_output):
+#         """
+#         In the backward pass we receive a Tensor containing the gradient of the loss
+#         with respect to the output, and we need to compute the gradient of the loss
+#         with respect to the input.
+#         """
+#         input, = self.saved_tensors
+#         grad_input = grad_output.clone()
+#         grad_input[torch.abs(input) >= 1] = 0
+#         return grad_input
 
-class BinarytanH(torch.autograd.Function):
-    #initialize the Binary Activation Function after Tanh
-    def __init__(self):
-        super(BinarytanH, self).__init__()
+# class BinarytanH(torch.autograd.Function):
+#     #initialize the Binary Activation Function after Tanh
+#     def __init__(self):
+#         super(BinarytanH, self).__init__()
         
-    def forward(self, x):
-        res = F.tanh(x)
-        out = Binaryactivation()(res)
-#         print out.grad_fn
-        return out
+#     def forward(self, x):
+#         res = F.tanh(x)
+#         out = Binaryactivation()(res)
+# #         print out.grad_fn
+#         return out
 
 class MNISTBinaryNet(nn.Module):
     def __init__(self):
         super(MNISTBinaryNet, self).__init__()
-        self.fc1 = BinaryLayer(28*28,70)#BinaryLayer(1440*4, 50)
-        # self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
-        # self.fc1 = BinaryLayer(1440*4,10)#BinaryLayer(1440*4, 50)
+        # self.fc1 = BinaryLayer(28*28,70)#BinaryLayer(1440*4, 50)
+        self.conv1 = BinaryConv2DLayer(1, 10, kernel_size=5)
+        self.fc1 = BinaryLayer(1440*4,70)#BinaryLayer(1440*4, 50)
+        # self.fc2 = BinaryLayer(70,10)#BinaryLayer(50, 10)
         self.fc2 = nn.Linear(70,10)#BinaryLayer(50, 10)
 
     def forward(self, x):
         # print(x.size())
-        # x = (self.conv1(x))
-        x = x.view(-1, 28*28)#1440*4)
+        x = (self.conv1(x))
+        # x = BinarytanH().forward(x)
+
+        # x = x.view(-1, 28*28)#1440*4)
+        x = x.view(-1, 1440*4)
         x = self.fc1(x)
         x = BinarytanH().forward(x)
         # x = BinarytanH().forward(self.fc1(x))
