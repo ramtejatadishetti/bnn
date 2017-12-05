@@ -13,7 +13,7 @@ import torchvision
 import os
 import torchvision.transforms as transforms
 from utils import progress_bar
-
+from custom import *
 
 random.seed(1)
 
@@ -33,7 +33,7 @@ cfg = {
 
 
 class VGG(nn.Module):
-    def __init__(self, vgg_name='VGG11'):
+    def __init__(self, vgg_name='VGG11', bin = False):
         super(VGG, self).__init__()
         self.features = self._make_layers(cfg[vgg_name])
         self.classifier = nn.Linear(512, 10)
@@ -47,13 +47,21 @@ class VGG(nn.Module):
         in_channels = 3
         for x in cfg:
             if x == 'M':
-                layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+                if(bin):
+                    layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+                else:
+                    layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
             else:
-                layers += [nn.Conv2d(in_channels, x, kernel_size=3, padding=1),
-                           nn.BatchNorm2d(x),
-                           nn.ReLU(inplace=True)]
+                if(bin):
+                    layers += [BinaryConv2DLayer(in_channels, x, kernel_size=3, padding=1),nn.BatchNorm2d(x),nn.ReLU(inplace=True)]
+                else:
+                    layers += [nn.Conv2d(in_channels, x, kernel_size=3, padding=1),nn.BatchNorm2d(x),nn.ReLU(inplace=True)]
                 in_channels = x
-        layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
+        if(bin):
+            layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
+        else:
+            layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
+
         return nn.Sequential(*layers)
 
 
@@ -81,55 +89,55 @@ def binarization(W,H, binary=True):
     return Wb
 
 
-class BinaryLayer(nn.Linear):
+# class BinaryLayer(nn.Linear):
 
-    #initialize the 
-    def __init__(self, input_dim, output_dim, H,binary=True):
+#     #initialize the 
+#     def __init__(self, input_dim, output_dim, H,binary=True):
 
-        self.H = H
-        self.binary = binary
-        super(BinaryLayer, self).__init__(input_dim, output_dim)
+#         self.H = H
+#         self.binary = binary
+#         super(BinaryLayer, self).__init__(input_dim, output_dim)
                 
     
-    def forward(self, input_weights):
+#     def forward(self, input_weights):
 
-        if self.binary:
-            #print("binary forward bin")
-            self.Wb = binarization(self.weight, self.H, self.binary)
-            backup_weight = self.weight.data
-            self.weight.data = self.Wb.data
+#         if self.binary:
+#             #print("binary forward bin")
+#             self.Wb = binarization(self.weight, self.H, self.binary)
+#             backup_weight = self.weight.data
+#             self.weight.data = self.Wb.data
 
-        out = super(BinaryLayer, self).forward(input_weights)
+#         out = super(BinaryLayer, self).forward(input_weights)
 
-        if self.binary:
-            self.weight.data = backup_weight
+#         if self.binary:
+#             self.weight.data = backup_weight
 
-        return out
+#         return out
 
-class BinaryConvLayer(nn.Conv2d):
+# class BinaryConvLayer(nn.Conv2d):
 
-    #initialize the 
-    def __init__(self, input_channels, output_channels, kernel_size, H, binary=True):
+#     #initialize the 
+#     def __init__(self, input_channels, output_channels, kernel_size, H, binary=True):
 
-        self.H = H
-        self.binary = binary
-        super(BinaryConvLayer, self).__init__(input_channels, output_channels, kernel_size)
+#         self.H = H
+#         self.binary = binary
+#         super(BinaryConvLayer, self).__init__(input_channels, output_channels, kernel_size)
                 
     
-    def forward(self, input_weights):
+#     def forward(self, input_weights):
 
-        if self.binary:
-            #print("binary forward")
-            self.Wb = binarization(self.weight, self.H, self.binary)
-            backup_weight = self.weight.data
-            self.weight.data = self.Wb.data
+#         if self.binary:
+#             #print("binary forward")
+#             self.Wb = binarization(self.weight, self.H, self.binary)
+#             backup_weight = self.weight.data
+#             self.weight.data = self.Wb.data
 
-        out = super(BinaryConvLayer, self).forward(input_weights)
+#         out = super(BinaryConvLayer, self).forward(input_weights)
         
-        if self.binary:
-            self.weight.data = backup_weight
+#         if self.binary:
+#             self.weight.data = backup_weight
 
-        return out
+#         return out
 
 
 
@@ -212,15 +220,16 @@ if __name__ == "__main__":
 
     #bd_layer = BinaryLayer(3, 4, 1, True)
 
-    net = VGG('VGG11')
+    net = VGG('VGG11',bin =True)
     print(net) 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
 
     start_epoch = 1
+    end_epoch = 2
     best_acc = 0
 
-    for epoch in range(start_epoch, start_epoch+100):
+    for epoch in range(start_epoch, end_epoch):
         print('\nEpoch: %d' % epoch)
 
         net.train()

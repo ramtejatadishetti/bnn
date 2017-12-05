@@ -175,9 +175,10 @@ if __name__ == "__main__":
     optimizer = ClippedOptimizer(net.parameters(), 1, 0.001, False)
 
     start_epoch = 1
+    end_epoch = 10
     best_acc = 0
 
-    for epoch in range(start_epoch, start_epoch+100):
+    for epoch in range(start_epoch, end_epoch):
         print('\nEpoch: %d' % epoch)
 
         net.train()
