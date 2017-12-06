@@ -16,28 +16,10 @@ import torchvision.transforms as transforms
 from utils import progress_bar
 from binaryutility import *
 
-class ClippedOptimizer(optim.SGD):
-    def __init__(self, params, H, lr,binary, momentum=0, dampening=0,weight_decay=0, nesterov=False):
-        super(ClippedOptimizer, self).__init__(params, lr, momentum, dampening, weight_decay, nesterov)
-        self.H = H
-        self.binary = binary
 
 
-    def step(self, closure=None):
-        super(ClippedOptimizer, self).step(closure)
-        
-        if self.binary:
-            #print("binary optim")
 
-            for wt in self.param_groups:
-                print(wt)
-                for p in wt['params']:
-                    if p.grad is None:
-                        continue
-                    p.data = torch.clamp(p.data, -self.H, self.H)
-
-
-EPOCHS = 1
+EPOCHS = 1000
 
 class MyNet(nn.Module):
     def __init__(self, binary):
@@ -45,11 +27,11 @@ class MyNet(nn.Module):
 
         self.binary = binary
 
-        self.binary_conv1 = BinaryConvLayer(3,6,5,1, self.binary)
-        self.binary_conv2 = BinaryConvLayer(6, 16, 5, 1, self.binary)
+        self.binary_conv1 = BinaryConvLayer(3,6,5,1, False)
+        self.binary_conv2 = BinaryConvLayer(6, 16, 5, 1, False)
 
-        self.binary_linear1 = BinaryLayer(16*5*5, 120, 1, self.binary)
-        self.binary_linear2 = BinaryLayer(120, 84, 1, self.binary)
+        self.binary_linear1 = BinaryLayer(16*5*5, 120, 1, False)
+        self.binary_linear2 = BinaryLayer(120, 84, 1, False)
         self.binary_linear3 = BinaryLayer(84, 10, 1, False)
     
     def forward(self, x):
@@ -88,20 +70,26 @@ if __name__ == "__main__":
 
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
-    net = MyNet(True)
+    net = VGG('VGG11',bin =False)
     #print(net)
     #print(net.parameters())
     criterion = nn.CrossEntropyLoss()
     optimizer = ClippedOptimizer(net.parameters(), 1, 0.001, True)
+
+    criterion = nn.CrossEntropyLoss()
 
     '''
     variables = net.state_dict()
     for key in variables.keys():
         print(key)
     '''
+
+    params = net.state_dict()
+    for key in params:
+        print (key)
     
-    for epoch in range(1):
-        print('\nEpoch: %d ' % epoch)
+    for epoch in range(EPOCHS):
+        #print('\nEpoch: %d ' % epoch)
         net.train()
         train_loss = 0
         correct = 0
@@ -119,14 +107,21 @@ if __name__ == "__main__":
             loss = criterion(outputs, targets)
             loss.backward()
 
-            variables = net.state_dict()
+            #variables = net.state_dict()
             #for key in variables.keys():
             #    print(key)
             #break    
             
             optimizer.step()
-            break
 
+            train_loss += loss.data[0]
+            _, predicted = torch.max(outputs.data, 1)
+            total += targets.size(0)
+            correct += predicted.eq(targets.data).cpu().sum()
+            
+            
+        train_acc = 100.*correct/total
+        print("Epoch:", epoch, train_acc)
 
     
 
