@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
+import copy
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
@@ -65,7 +66,54 @@ class Net(nn.Module):
         x = self.fc2(x)
         return F.log_softmax(x)
 
-model = Net()
+
+# class NonBinLinearNet(nn.Module):
+#     def __init__(self):
+#         super(LinearNet, self).__init__()
+#         self.fc1 = nn.Linear(28*28*1, 10)
+
+#     def forward(self, x):
+#         x = x.view(-1, 28*28*1)
+#         x = self.fc1(x)
+#         # x = F.tanh(self.fc1(x))
+#         return F.log_softmax(x)
+
+class LinearNet(nn.Module):
+    def __init__(self, binary):
+        super(LinearNet, self).__init__()
+        self.binary = binary
+        if self.binary:
+            self.fc1 = NewBinaryLayer(28*28*1, 10)
+        else:
+            self.fc1 = nn.Linear(28*28*1, 10)            
+
+    def forward(self, x):
+        x = x.view(-1, 28*28*1)
+        x = self.fc1(x)
+        # x = F.tanh(self.fc1(x))
+        return F.log_softmax(x)
+
+def binarize(W, stochastic=False):
+    x = copy.deepcopy(W.data)
+    x[x>0] = 1
+    x[x<=0] = -1
+    return x
+
+class NewBinaryLayer(nn.Linear):
+    #initialize the Binary Layer where weights are binarized
+    def __init__(self, input_dim, output_dim):
+        super(NewBinaryLayer, self).__init__(input_dim, output_dim)
+        
+    def forward(self, x):
+        self.new_weight = binarize(self.weight)
+        # print self.new_weight.grad_fn
+        backup_weight = self.weight.data
+        self.weight.data = backup_weight
+        out = super(NewBinaryLayer, self).forward(x)
+        self.weight.data = backup_weight
+        return out
+
+model = LinearNet()
 if args.cuda:
     model.cuda()
 
