@@ -6,7 +6,6 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
-import copy
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
@@ -78,72 +77,8 @@ class Net(nn.Module):
 #         # x = F.tanh(self.fc1(x))
 #         return F.log_softmax(x)
 
-class LinearNet(nn.Module):
-    def __init__(self, binary):
-        super(LinearNet, self).__init__()
-        self.binary = binary
-        if self.binary:
-            self.fc1 = NewBinaryLayer(28*28*1, 10)
-        else:
-            self.fc1 = nn.Linear(28*28*1, 10)            
 
-    def forward(self, x):
-        x = x.view(-1, 28*28*1)
-        x = self.fc1(x)
-        # x = F.tanh(self.fc1(x))
-        return F.log_softmax(x)
 
-def binarize(W, stochastic=False):
-    x = copy.deepcopy(W.data)
-    x = torch.clamp((x+1.0)/2.0, 0, 1)
-    y = copy.deepcopy(x)
-    x = torch.round(x)
-    #     print(x),"HELLLLLLLLLLO",y
-    x[x==1] = 1
-    x[x==0] = -1
-    return x,y
-
-class NewBinaryLayer(nn.Linear):
-    #initialize the Binary Layer where weights are binarized
-    def __init__(self, input_dim, output_dim, verbose=False):
-        self.verbose = verbose
-        super(NewBinaryLayer, self).__init__(input_dim, output_dim)
-        
-        
-    def forward(self, x):
-        if(self.verbose):
-            print("Weights,bias in forward prop before binarization")
-            print(self.weight.data)
-            print(self.bias.data)
-        
-        self.new_weight,clipped_wt_data = binarize(self.weight)
-        if(self.verbose):
-            print(self.weight.data)
-            print(self.new_weight)
-        self.weight.data = clipped_wt_data
-        backup_weight = self.weight.data
-        self.weight.data = self.new_weight
-        if(self.verbose):
-            print("inputs")
-            print(x.data)
-
-            print("Weights,bias in forward prop after binarization")
-            print(self.weight.data)
-            print(self.bias.data)
-        
-        out = super(NewBinaryLayer, self).forward(x)
-        if(self.verbose):
-            print("computing wx + b ")
-            print(out)
-
-        self.weight.data = backup_weight
-        #          #### CHECK GRADIENTS IN BACKWARD FLOW
-        #         gradients = torch.FloatTensor([[1.0,0.0]])
-        #         out.backward(gradients)
-
-        #         print(x.grad)
-        #         print out.grad, self.weight.grad, self.bias.grad, x.grad
-        return out
 # def binarize(W, stochastic=False):
 #     x = copy.deepcopy(W.data)
 #     x[x>0] = 1
@@ -164,7 +99,7 @@ class NewBinaryLayer(nn.Linear):
 #         self.weight.data = backup_weight
 #         return out
 
-model = LinearNet(True)
+model = Net()
 if args.cuda:
     model.cuda()
 

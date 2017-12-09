@@ -7,6 +7,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 from custom import *
+import copy
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
@@ -49,6 +50,21 @@ test_loader = torch.utils.data.DataLoader(
                    ])),
     batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
+
+class LinearNet(nn.Module):
+    def __init__(self, binary):
+        super(LinearNet, self).__init__()
+        self.binary = binary
+        if self.binary:
+            self.fc1 = NewBinaryLayer(28*28*1, 10)
+        else:
+            self.fc1 = nn.Linear(28*28*1, 10)            
+
+    def forward(self, x):
+        x = x.view(-1, 28*28*1)
+        x = self.fc1(x)
+        # x = F.tanh(self.fc1(x))
+        return F.log_softmax(x)
 
 # class BinarizeWeights(torch.autograd.Function):
 #     def __init__(self):
@@ -151,7 +167,7 @@ class MNISTBinaryNet(nn.Module):
         x = self.fc2(x)
         return F.log_softmax(x)
 
-model = MNISTBinaryNet()
+model = LinearNet(True)
 if args.cuda:
     model.cuda()
 
