@@ -108,12 +108,12 @@ class NewBinaryLayer(nn.Linear):
         self.new_weight = binarize(self.weight)
         # print self.new_weight.grad_fn
         backup_weight = self.weight.data
-        self.weight.data = backup_weight
+        self.weight.data = self.new_weight
         out = super(NewBinaryLayer, self).forward(x)
         self.weight.data = backup_weight
         return out
 
-model = LinearNet()
+model = LinearNet(True)
 if args.cuda:
     model.cuda()
 
