@@ -22,6 +22,15 @@ def binarize(W, stochastic=False):
     x[x==0] = -1
     return x,y
 
+def quantized_binarize(W, H):
+    x = copy.deepcopy(W.data)
+    y = torch.clamp(x, -H, H)
+
+    x = torch.round(x)
+
+    return x,y
+
+
 class NewBinaryLayer(nn.Linear):
     #initialize the Binary Layer where weights are binarized
     def __init__(self, input_dim, output_dim, stochastic=False, verbose=False):
