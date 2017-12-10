@@ -15,7 +15,7 @@ parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                     help='input batch size for training (default: 64)')
 parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                     help='input batch size for testing (default: 1000)')
-parser.add_argument('--epochs', type=int, default=5, metavar='N',
+parser.add_argument('--epochs', type=int, default=20, metavar='N',
                     help='number of epochs to train (default: 10)')
 parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                     help='learning rate (default: 0.01)')
@@ -54,6 +54,37 @@ test_loader = torch.utils.data.DataLoader(
 eps_const = 1e-5
 
 
+class Net(nn.Module):
+    def __init__(self, binary, stochastic=False):
+        super(Net, self).__init__()
+        self.binary = binary
+        if self.binary:
+            self.conv1 = NewBinaryConv2D(1, 10, stochastic=stochastic, kernel_size=5)
+            self.conv2 = NewBinaryConv2D(10, 20,  stochastic=stochastic, kernel_size=5)
+            self.fc1 = NewBinaryLayer(320, 50,  stochastic=stochastic)
+            # self.fc2 = NewBinaryLayer(50, 10, stochastic=stochastic)
+            self.fc2 = NewBinaryLayer(24*24*10, 10, stochastic=stochastic)
+        else:
+            self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
+            self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
+            self.fc1 = nn.Linear(320, 50)
+            # self.fc2 = nn.Linear(50, 10)
+            self.fc2 = nn.Linear(24*24*10, 10, stochastic=stochastic)
+        self.bn1 = nn.BatchNorm2d(10,eps=eps_const)
+
+
+    def forward(self, x):
+        # RELU SEEMS TO PERFORM FAIRLY POORLY IN THIS NETWORK FOR BINARIZATION :-(
+        x = F.tanh(self.bn1(self.conv1(x)))
+        x = x.view(-1, 24*24*10)
+        x = self.fc2(x)
+        # x = F.relu(F.max_pool2d(self.conv1(x), 2))
+        # x = F.relu(F.max_pool2d(self.conv2(x), 2))
+        # x = x.view(-1, 320)
+        # x = F.relu(self.fc1(x))
+        # x = self.fc2(x)
+        return F.log_softmax(x)
+
 class LinearNet(nn.Module):
     def __init__(self, binary, stochastic=False):
         super(LinearNet, self).__init__()
@@ -65,6 +96,7 @@ class LinearNet(nn.Module):
 
     def forward(self, x):
         x = x.view(-1, 28*28*1)
+
         x = self.fc1(x)
         # x = F.tanh(self.fc1(x))
         return F.log_softmax(x)
@@ -98,8 +130,9 @@ class ThreeLayerNet(nn.Module):
         x = self.fc4(x)
         return F.log_softmax(x)
 
-
-model = ThreeLayerNet(True)
+# model = Net(True)
+# model = LinearNet(True,True)
+model = ThreeLayerNet(True, True)
 if args.cuda:
     model.cuda()
 
@@ -110,7 +143,8 @@ def train(epoch):
     for batch_idx, (data, target) in enumerate(train_loader):
         if args.cuda:
             data, target = data.cuda(), target.cuda()
-        data, target = Variable(data), Variable(target)
+        else:
+            data, target = Variable(data), Variable(target)
         optimizer.zero_grad()
         output = model(data)
         loss = F.nll_loss(output, target)
@@ -128,7 +162,8 @@ def test():
     for data, target in test_loader:
         if args.cuda:
             data, target = data.cuda(), target.cuda()
-        data, target = Variable(data, volatile=True), Variable(target)
+        else:
+            data, target = Variable(data, volatile=True), Variable(target)
         output = model(data)
         test_loss += F.nll_loss(output, target, size_average=False).data[0] # sum up batch loss
         pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
