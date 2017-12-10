@@ -8,10 +8,6 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 import copy
 
-#hard sigmoid functiom
-def hard_sigmoid(x):
-    return torch.clamp((x+1.)/2., 0, 1)
-
 def binarize(W, stochastic=False):
     x = copy.deepcopy(W.data)
     y = torch.clamp(x, -1, 1)
@@ -67,18 +63,32 @@ class NewBinaryLayer(nn.Linear):
         return out
 
 
-class BinaryConv2DLayer(nn.Conv2d):
-    #initialize the Binary Layer where weights are binarized
-    def __init__(self, input_dim, output_dim, stochastic=False, **kwargs):
-        self.stochastic = stochastic
-        super(BinaryConv2DLayer, self).__init__(input_dim, output_dim, **kwargs)
-        
-    def forward(self, x):
-        self.new_weight,clipped_wt_data = binarize(self.weight, self.stochastic)
-        self.weight.data = clipped_wt_data
-        backup_weight = self.weight.data
-        self.weight.data = self.new_weight
-        out = super(NewBinaryLayer, self).forward(x)
-        self.weight.data = backup_weight
-        return out
 
+class NewBinaryConv2D(nn.Conv2d):
+    def __init__(self, in_channels, out_channels, kernal_size, verbose=False):
+        self.verbose = verbose
+        super(NewBinaryConv2D, self).__init__(in_channels, out_channels, kernal_size)
+    
+    def forward(self, x):
+        self.new_weight, clipped_wt_data = binarize(self.weight)
+
+        # replace the weights with clipped weights
+        # this part should be done in parameter update
+        # but make it here still does not corrupt the data
+        # in forward prop or backward prop 
+        self.weight.data = clipped_wt_data
+
+        # store the old weights so that they could be restored later
+        backup_weight = self.weight.data
+
+        # replace the binary weights into actual weights
+        self.weight.data = self.new_weight
+
+
+        # compute layer operation
+        out = super(NewBinaryConv2D, self).forward(x)
+
+        # restore old weights
+        self.weight.data = backup_weight
+
+        return out
