@@ -25,11 +25,21 @@ def binarize(W, stochastic=False):
         # print(x) 
     return x,y
 
+def quantized_binarize(W, H):
+    x = copy.deepcopy(W.data)
+    y = torch.clamp(x, -H, H)
+
+    x = torch.round(x)
+
+    return x,y
+
+
 class NewBinaryLayer(nn.Linear):
     #initialize the Binary Layer where weights are binarized
-    def __init__(self, input_dim, output_dim, stochastic=False, verbose=False):
+    def __init__(self, input_dim, output_dim, stochastic=False, quantization=1,verbose=False):
         self.verbose = verbose
         self.stochastic = stochastic
+        self.quantization = quantization
         super(NewBinaryLayer, self).__init__(input_dim, output_dim)
         
         
@@ -39,7 +49,12 @@ class NewBinaryLayer(nn.Linear):
             print(self.weight.data)
             print(self.bias.data)
         
-        self.new_weight,clipped_wt_data = binarize(self.weight, self.stochastic)
+        if self.quantization == 1:
+            self.new_weight,clipped_wt_data = binarize(self.weight, self.stochastic)
+        
+        else:
+            self.new_weight,clipped_wt_data = quantized_binarize(self.weight, self.quantization)
+
         if(self.verbose):
             print(self.weight.data)
             print(self.new_weight)
@@ -71,12 +86,18 @@ class NewBinaryLayer(nn.Linear):
 
 
 class NewBinaryConv2D(nn.Conv2d):
-    def __init__(self, in_channels, out_channels, stochastic=False, **kwargs):
+    def __init__(self, in_channels, out_channels, stochastic=False, quantization=1, **kwargs):
         self.stochastic = stochastic
+        self.quantization = quantization
         super(NewBinaryConv2D, self).__init__(in_channels, out_channels, **kwargs)
     
     def forward(self, x):
-        self.new_weight, clipped_wt_data = binarize(self.weight, self.stochastic)
+
+        if self.quantization == 1:
+            self.new_weight, clipped_wt_data = binarize(self.weight, self.stochastic)
+        
+        else:
+            self.new_weight,clipped_wt_data = quantized_binarize(self.weight, self.quantization)
 
         # replace the weights with clipped weights
         # this part should be done in parameter update
