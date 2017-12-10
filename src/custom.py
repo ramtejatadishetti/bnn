@@ -7,6 +7,9 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 import copy
+#hard sigmoid functiom
+def hard_sigmoid(x):
+    return torch.clamp((x+1.)/2., 0, 1)
 
 def binarize(W, stochastic=False):
     x = copy.deepcopy(W.data)
@@ -65,12 +68,12 @@ class NewBinaryLayer(nn.Linear):
 
 
 class NewBinaryConv2D(nn.Conv2d):
-    def __init__(self, in_channels, out_channels, kernal_size, verbose=False):
-        self.verbose = verbose
-        super(NewBinaryConv2D, self).__init__(in_channels, out_channels, kernal_size)
+    def __init__(self, in_channels, out_channels, stochastic=False, **kwargs):
+        self.stochastic = stochastic
+        super(NewBinaryConv2D, self).__init__(in_channels, out_channels, **kwargs)
     
     def forward(self, x):
-        self.new_weight, clipped_wt_data = binarize(self.weight)
+        self.new_weight, clipped_wt_data = binarize(self.weight, self.stochastic)
 
         # replace the weights with clipped weights
         # this part should be done in parameter update

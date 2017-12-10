@@ -33,14 +33,15 @@ cfg = {
 
 
 class VGG(nn.Module):
-    def __init__(self, vgg_name='VGG11', bin = False):
+    def __init__(self, vgg_name='VGG11', bin = False, stochastic = False):
         super(VGG, self).__init__()
         self.bin = bin
+        self.stochastic = stochastic
         self.features = self._make_layers(cfg[vgg_name])
-        if(self.bin):
+        if(not self.bin):
             self.classifier = nn.Linear(512, 10)
         else:
-            self.classifier = nn.Linear(512, 10)
+            self.classifier = NewBinaryLayer(512, 10, stochastic=self.stochastic)
 
     def forward(self, x):
         out = self.features(x)
@@ -58,7 +59,7 @@ class VGG(nn.Module):
                     layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
             else:
                 if(self.bin):
-                    layers += [BinaryConv2DLayer(in_channels, x, kernel_size=3, padding=1),nn.BatchNorm2d(x),nn.ReLU(inplace=True)]
+                    layers += [NewBinaryConv2D(in_channels, x, self.stochastic, kernel_size=3, padding=1),nn.BatchNorm2d(x),nn.ReLU(inplace=True)]
                 else:
                     layers += [nn.Conv2d(in_channels, x, kernel_size=3, padding=1),nn.BatchNorm2d(x),nn.ReLU(inplace=True)]
                 in_channels = x
