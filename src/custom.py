@@ -11,17 +11,19 @@ import copy
 def binarize(W, stochastic=False):
     x = copy.deepcopy(W.data)
     y = torch.clamp(x, -1, 1)
-    x = torch.clamp((x+1.0)/2.0, 0, 1)
-    x = torch.round(x)
-    #     print(x),"HELLLLLLLLLLO",y
-    x[x==1] = 1
+    x = hard_sigmoid(x)
+    if(stochastic):
+        x = torch.bernoulli(x)
+    else:
+        x = torch.round(x)
     x[x==0] = -1
     return x,y
 
 class NewBinaryLayer(nn.Linear):
     #initialize the Binary Layer where weights are binarized
-    def __init__(self, input_dim, output_dim, verbose=False):
+    def __init__(self, input_dim, output_dim, stochastic=False, verbose=False):
         self.verbose = verbose
+        self.stochastic = stochastic
         super(NewBinaryLayer, self).__init__(input_dim, output_dim)
         
         
@@ -31,8 +33,7 @@ class NewBinaryLayer(nn.Linear):
             print(self.weight.data)
             print(self.bias.data)
         
-        self.new_weight,clipped_wt_data = binarize(self.weight)
-        
+        self.new_weight,clipped_wt_data = binarize(self.weight, self.stochastic)
         if(self.verbose):
             print(self.weight.data)
             print(self.new_weight)
@@ -59,4 +60,21 @@ class NewBinaryLayer(nn.Linear):
 
         #         print(x.grad)
         #         print out.grad, self.weight.grad, self.bias.grad, x.grad
-        return F.log_softmax(out)
+        return out
+
+
+
+class BinaryConv2DLayer(nn.Conv2d):
+    #initialize the Binary Layer where weights are binarized
+    def __init__(self, input_dim, output_dim, stochastic=False, **kwargs):
+        self.stochastic = stochastic
+        super(BinaryConv2DLayer, self).__init__(input_dim, output_dim, **kwargs)
+        
+    def forward(self, x):
+        self.new_weight,clipped_wt_data = binarize(self.weight, self.stochastic)
+        self.weight.data = clipped_wt_data
+        backup_weight = self.weight.data
+        self.weight.data = self.new_weight
+        out = super(NewBinaryLayer, self).forward(x)
+        self.weight.data = backup_weight
+        return out
