@@ -51,12 +51,15 @@ test_loader = torch.utils.data.DataLoader(
     batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
 
+eps_const = 1e-5
+
+
 class LinearNet(nn.Module):
-    def __init__(self, binary):
+    def __init__(self, binary, stochastic=False):
         super(LinearNet, self).__init__()
         self.binary = binary
         if self.binary:
-            self.fc1 = NewBinaryLayer(28*28*1, 10)
+            self.fc1 = NewBinaryLayer(28*28*1, 10, stochastic=stochastic)
         else:
             self.fc1 = nn.Linear(28*28*1, 10)            
 
@@ -64,6 +67,35 @@ class LinearNet(nn.Module):
         x = x.view(-1, 28*28*1)
         x = self.fc1(x)
         # x = F.tanh(self.fc1(x))
+        return F.log_softmax(x)
+
+class ThreeLayerNet(nn.Module):
+    def __init__(self, binary, stochastic=False):
+        super(ThreeLayerNet, self).__init__()
+        self.binary = binary
+        if self.binary:
+            self.fc1 = NewBinaryLayer(28*28*1, 2048, stochastic=stochastic)
+            self.bn1 = nn.BatchNorm1d(2048,eps=eps_const)
+            self.fc2 = NewBinaryLayer(2048, 2048, stochastic=stochastic)
+            self.bn2 = nn.BatchNorm1d(2048,eps=eps_const)
+            self.fc3 = NewBinaryLayer(2048, 2048, stochastic=stochastic)
+            self.bn3 = nn.BatchNorm1d(2048,eps=eps_const)
+            self.fc4 = NewBinaryLayer(2048, 10, stochastic=stochastic)
+        else:
+            self.fc1 = nn.Linear(28*28*1, 2048)  
+            self.bn1 = nn.BatchNorm1d(2048,eps=eps_const)
+            self.fc2 = nn.Linear(2048, 2048)
+            self.bn2 = nn.BatchNorm1d(2048,eps=eps_const)
+            self.fc3 = nn.Linear(2048, 2048)
+            self.bn3 = nn.BatchNorm1d(2048,eps=eps_const)
+            self.fc4 = nn.Linear(2048, 10)          
+
+    def forward(self, x):
+        x = x.view(-1, 28*28*1)
+        x = F.relu(self.bn1(self.fc1(x)))
+        x = F.relu(self.bn2(self.fc2(x)))
+        x = F.relu(self.bn3(self.fc3(x)))
+        x = self.fc4(x)
         return F.log_softmax(x)
 
 # class BinarizeWeights(torch.autograd.Function):
@@ -167,7 +199,7 @@ class MNISTBinaryNet(nn.Module):
         x = self.fc2(x)
         return F.log_softmax(x)
 
-model = LinearNet(True)
+model = ThreeLayerNet(True,True)
 if args.cuda:
     model.cuda()
 

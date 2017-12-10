@@ -8,6 +8,10 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 import copy
 
+#hard sigmoid functiom
+def hard_sigmoid(x):
+    return torch.clamp((x+1.)/2., 0, 1)
+
 def binarize(W, stochastic=False):
     x = copy.deepcopy(W.data)
     y = torch.clamp(x, -1, 1)
@@ -63,7 +67,6 @@ class NewBinaryLayer(nn.Linear):
         return out
 
 
-
 class BinaryConv2DLayer(nn.Conv2d):
     #initialize the Binary Layer where weights are binarized
     def __init__(self, input_dim, output_dim, stochastic=False, **kwargs):
@@ -78,3 +81,4 @@ class BinaryConv2DLayer(nn.Conv2d):
         out = super(NewBinaryLayer, self).forward(x)
         self.weight.data = backup_weight
         return out
+

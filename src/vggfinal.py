@@ -35,8 +35,13 @@ cfg = {
 class VGG(nn.Module):
     def __init__(self, vgg_name='VGG11', bin = False):
         super(VGG, self).__init__()
+        self.bin = bin
         self.features = self._make_layers(cfg[vgg_name])
-        self.classifier = nn.Linear(512, 10)
+        if(self.bin):
+            self.classifier = nn.Linear(512, 10)
+        else:
+            self.classifier = nn.Linear(512, 10)
+
     def forward(self, x):
         out = self.features(x)
         out = out.view(out.size(0), -1)
@@ -47,98 +52,22 @@ class VGG(nn.Module):
         in_channels = 3
         for x in cfg:
             if x == 'M':
-                if(bin):
+                if(self.bin):
                     layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
                 else:
                     layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
             else:
-                if(bin):
+                if(self.bin):
                     layers += [BinaryConv2DLayer(in_channels, x, kernel_size=3, padding=1),nn.BatchNorm2d(x),nn.ReLU(inplace=True)]
                 else:
                     layers += [nn.Conv2d(in_channels, x, kernel_size=3, padding=1),nn.BatchNorm2d(x),nn.ReLU(inplace=True)]
                 in_channels = x
-        if(bin):
+        if(self.bin):
             layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
         else:
             layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
 
         return nn.Sequential(*layers)
-
-
-
-
-
-#hard sigmoid functiom
-def hard_sigmoid(x):
-    return torch.clamp((x+1.)/2., 0, 1)
-
-
-# takes input from [ -1 , 1 ]
-# and performs a binarization using hard sigmoid function 
-def binarization(W,H, binary=True):
-    if not binary:
-        Wb = W
-    else:
-        Wb = hard_sigmoid(W/H)
-
-        Wb = torch.round(Wb)
-    
-        Wb[Wb > 0 ] = H
-        Wb[Wb <=0 ] = -H
-   
-    return Wb
-
-
-# class BinaryLayer(nn.Linear):
-
-#     #initialize the 
-#     def __init__(self, input_dim, output_dim, H,binary=True):
-
-#         self.H = H
-#         self.binary = binary
-#         super(BinaryLayer, self).__init__(input_dim, output_dim)
-                
-    
-#     def forward(self, input_weights):
-
-#         if self.binary:
-#             #print("binary forward bin")
-#             self.Wb = binarization(self.weight, self.H, self.binary)
-#             backup_weight = self.weight.data
-#             self.weight.data = self.Wb.data
-
-#         out = super(BinaryLayer, self).forward(input_weights)
-
-#         if self.binary:
-#             self.weight.data = backup_weight
-
-#         return out
-
-# class BinaryConvLayer(nn.Conv2d):
-
-#     #initialize the 
-#     def __init__(self, input_channels, output_channels, kernel_size, H, binary=True):
-
-#         self.H = H
-#         self.binary = binary
-#         super(BinaryConvLayer, self).__init__(input_channels, output_channels, kernel_size)
-                
-    
-#     def forward(self, input_weights):
-
-#         if self.binary:
-#             #print("binary forward")
-#             self.Wb = binarization(self.weight, self.H, self.binary)
-#             backup_weight = self.weight.data
-#             self.weight.data = self.Wb.data
-
-#         out = super(BinaryConvLayer, self).forward(input_weights)
-        
-#         if self.binary:
-#             self.weight.data = backup_weight
-
-#         return out
-
 
 
 class MyNetwork(nn.Module):
