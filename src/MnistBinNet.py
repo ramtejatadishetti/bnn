@@ -61,29 +61,50 @@ class Net(nn.Module):
         if self.binary:
             self.conv1 = NewBinaryConv2D(1, 10, stochastic=stochastic, kernel_size=5)
             self.conv2 = NewBinaryConv2D(10, 20,  stochastic=stochastic, kernel_size=5)
-            self.fc1 = NewBinaryLayer(320, 50,  stochastic=stochastic)
-            # self.fc2 = NewBinaryLayer(50, 10, stochastic=stochastic)
-            self.fc2 = NewBinaryLayer(24*24*10, 10, stochastic=stochastic)
+            self.fc1 = NewBinaryLayer(20*20*20, 50,  stochastic=stochastic)
+            self.fc2 = NewBinaryLayer(50, 10, stochastic=stochastic)
+            # self.fc2 = NewBinaryLayer(24*24*10, 10, stochastic=stochastic)
         else:
             self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
             self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-            self.fc1 = nn.Linear(320, 50)
-            # self.fc2 = nn.Linear(50, 10)
-            self.fc2 = nn.Linear(24*24*10, 10, stochastic=stochastic)
+            self.fc1 = nn.Linear(20*20*20, 50)
+            self.fc2 = nn.Linear(50, 10)
+            # self.fc2 = nn.Linear(24*24*10, 10, stochastic=stochastic)
         self.bn1 = nn.BatchNorm2d(10,eps=eps_const)
+        self.bn2 = nn.BatchNorm2d(20,eps=eps_const)
 
 
     def forward(self, x):
-        # RELU SEEMS TO PERFORM FAIRLY POORLY IN THIS NETWORK FOR BINARIZATION :-(
+        # # RELU SEEMS TO PERFORM FAIRLY POORLY IN THIS NETWORK FOR BINARIZATION :-(
+        # x = F.tanh(self.bn1(self.conv1(x)))
+        # x = x.view(-1, 24*24*10)
+        # x = self.fc2(x)
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = x.view(-1, 20*20*20)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return F.log_softmax(x)
+
+class SimpleNet(nn.Module):
+    def __init__(self, binary, stochastic=False):
+        super(SimpleNet, self).__init__()
+        self.binary = binary
+        if self.binary:
+            self.conv1 = NewBinaryConv2D(1, 10, stochastic=stochastic, kernel_size=5)
+            self.fc1 = NewBinaryLayer(24*24*10, 10, stochastic=stochastic)
+        else:
+            self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
+            self.fc1 = nn.Linear(24*24*10, 10)
+        self.bn1 = nn.BatchNorm2d(10,eps=eps_const)            
+
+    def forward(self, x):
         x = F.tanh(self.bn1(self.conv1(x)))
         x = x.view(-1, 24*24*10)
-        x = self.fc2(x)
-        # x = F.relu(F.max_pool2d(self.conv1(x), 2))
-        # x = F.relu(F.max_pool2d(self.conv2(x), 2))
-        # x = x.view(-1, 320)
-        # x = F.relu(self.fc1(x))
-        # x = self.fc2(x)
+        x = self.fc1(x)
         return F.log_softmax(x)
+
+
 
 class LinearNet(nn.Module):
     def __init__(self, binary, stochastic=False):
@@ -129,10 +150,10 @@ class ThreeLayerNet(nn.Module):
         x = F.relu(self.bn3(self.fc3(x)))
         x = self.fc4(x)
         return F.log_softmax(x)
+#ST, DET
+# model = SimpleNet(True, False)
 
-# model = Net(True)
-# model = LinearNet(True,True)
-model = ThreeLayerNet(True, True)
+model = LinearNet(False, False)
 if args.cuda:
     model.cuda()
 

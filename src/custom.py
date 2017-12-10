@@ -7,6 +7,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 import copy
+import random
 #hard sigmoid functiom
 def hard_sigmoid(x):
     return torch.clamp((x+1.)/2., 0, 1)
@@ -14,12 +15,14 @@ def hard_sigmoid(x):
 def binarize(W, stochastic=False):
     x = copy.deepcopy(W.data)
     y = torch.clamp(x, -1, 1)
-    x = hard_sigmoid(x)
+    x = hard_sigmoid(y)
     if(stochastic):
         x = torch.bernoulli(x)
     else:
         x = torch.round(x)
     x[x==0] = -1
+    # if(random.random()<=0.01):
+        # print(x) 
     return x,y
 
 class NewBinaryLayer(nn.Linear):

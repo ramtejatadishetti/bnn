@@ -156,7 +156,7 @@ if __name__ == "__main__":
     optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
 
     start_epoch = 1
-    end_epoch = 2
+    end_epoch = 41
     best_acc = 0
 
     for epoch in range(start_epoch, end_epoch):
@@ -225,26 +225,3 @@ if __name__ == "__main__":
                 os.mkdir('checkpoint')
             torch.save(state, './checkpoint/ckpt.t7')
             best_acc = acc
-        
-        
-    '''
-    mynet = MyNetwork()
-    print(mynet) 
-
-    params = list(mynet.parameters())
-    print(len(params))
-    
-    [print(i) for i in params ]
-
-    
-    optimizer = ClippedOptimizer(bd_layer.parameters(),1, 0.01, True)
-    optimizer.zero_grad()
-    criterion = nn.MSELoss()
-
-    output = bd_layer.forward(inp)
-
-    loss = criterion(output, target)
-    loss.backward()
-
-    optimizer.step()
-    '''
