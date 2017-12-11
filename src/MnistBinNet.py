@@ -8,11 +8,11 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 from custom import *
 import copy
-
+from MnistNet import *
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 parser.add_argument('--batch-size', type=int, default=64, metavar='N',
-                    help='input batch size for training (default: 64)')
+                    help='input batch size for training (default: 10000)')
 parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                     help='input batch size for testing (default: 1000)')
 parser.add_argument('--epochs', type=int, default=20, metavar='N',
@@ -52,6 +52,7 @@ test_loader = torch.utils.data.DataLoader(
 
 
 eps_const = 1e-5
+
 
 
 class Net(nn.Module):
@@ -153,7 +154,7 @@ class ThreeLayerNet(nn.Module):
 #ST, DET
 # model = SimpleNet(True, False)
 
-model = LinearNet(False, False)
+model = MNISTNET(True)
 if args.cuda:
     model.cuda()
 
