@@ -119,3 +119,53 @@ class NewBinaryConv2D(nn.Conv2d):
         self.weight.data = backup_weight
 
         return out
+
+
+class NewRound(torch.autograd.Function):
+    #initialize the Binary Activation Function after Tanh
+    def __init__(self):
+        super(NewRound, self).__init__()
+        
+    def forward(self, input, stochastic=True):
+        out = torch.round(input)
+        return out
+    
+    def backward(self, grad_output):
+        """
+        In the backward pass we receive a Tensor containing the gradient of the loss
+        with respect to the output, and we need to compute the gradient of the loss
+        with respect to the input.
+        """
+        grad_input = grad_output.clone()
+        return grad_input
+
+
+class Binaryactivation(torch.autograd.Function):
+    #initialize the Binary Activation Function after Tanh
+    def __init__(self):
+        super(Binaryactivation, self).__init__()
+        
+    def forward(self, input, stochastic=True):
+        x = (2*hard_sigmoid(input) - 1)
+        out = NewRound()(x)
+        return out
+
+
+class BinarytanH(torch.autograd.Function):
+    #initialize the Binary Activation Function after Tanh
+    def __init__(self):
+        super(BinarytanH, self).__init__()
+        
+    def forward(self, x):
+        out = Binaryactivation().forward(x)
+        return out
+
+class BintanH(torch.nn.Module):
+    #initialize the Binary Activation Function after Tanh
+    def __init__(self):
+        super(BintanH, self).__init__()
+        
+    def forward(self, x):
+        out = Binaryactivation().forward(x)
+        return out
+

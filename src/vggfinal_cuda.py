@@ -65,7 +65,7 @@ class VGG(nn.Module):
                     layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
             else:
                 if(self.bin):
-                    layers += [NewBinaryConv2D(in_channels, x, self.stochastic, kernel_size=3, padding=1),nn.BatchNorm2d(x),nn.Tanh()]
+                    layers += [NewBinaryConv2D(in_channels, x, self.stochastic, kernel_size=3, padding=1),nn.BatchNorm2d(x),BintanH()]
                 else:
                     layers += [nn.Conv2d(in_channels, x, kernel_size=3, padding=1),nn.BatchNorm2d(x),nn.Tanh()]
                 in_channels = x
