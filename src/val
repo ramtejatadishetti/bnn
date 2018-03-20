@@ -1,0 +1,28 @@
+MNIST - 3 Layer No Binarization::
+
+Test set: Average loss: 0.0891, Accuracy: 9747/10000 (97%)
+Test set: Average loss: 0.0694, Accuracy: 9780/10000 (98%)
+Test set: Average loss: 0.0613, Accuracy: 9802/10000 (98%)
+Test set: Average loss: 0.0523, Accuracy: 9831/10000 (98%)
+Test set: Average loss: 0.0530, Accuracy: 9834/10000 (98%)
+
+
+MNIST - 3 Layer Deterministic Binarization::
+
+Test set: Average loss: 0.6537, Accuracy: 9463/10000 (95%)
+Test set: Average loss: 0.5964, Accuracy: 9531/10000 (95%)
+Test set: Average loss: 0.4261, Accuracy: 9611/10000 (96%)
+Test set: Average loss: 0.4638, Accuracy: 9600/10000 (96%)
+Test set: Average loss: 0.4134, Accuracy: 9661/10000 (97%)
+
+
+MNIST - 3 Layer Stochastic Binarization::
+Test set: Average loss: 7.9766, Accuracy: 1050/10000 (10%)
+Test set: Average loss: 3.5039, Accuracy: 1149/10000 (11%)
+Test set: Average loss: 3.1709, Accuracy: 1058/10000 (11%)
+Test set: Average loss: 2.8786, Accuracy: 1012/10000 (10%)
+Test set: Average loss: 2.7793, Accuracy: 1038/10000 (10%)
+
+VGG - WITH BINARIZATION
+Epoch: 1
+ [================================================== 391/391 =====>]  Step: 2s983ms | Tot: 1h8m | Loss: 3.961 | Acc: [================================================= 100/100 ======>]  Step: 1s61ms | Tot: 1m46s | Loss: 1.747 | Acc:Epoch, Training accuracy, Test Accuracy 1 26.654 36.51

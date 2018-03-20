@@ -1,0 +1,169 @@
+Epoch: 1
+Epoch, Training accuracy, Test Accuracy 1 47.898 58.12
+Saving..
+
+Epoch: 2
+Epoch, Training accuracy, Test Accuracy 2 62.554 62.54
+Saving..
+
+Epoch: 3
+Epoch, Training accuracy, Test Accuracy 3 68.034 68.5
+Saving..
+
+Epoch: 4
+Epoch, Training accuracy, Test Accuracy 4 71.412 68.6
+Saving..
+
+Epoch: 5
+Epoch, Training accuracy, Test Accuracy 5 74.016 75.78
+Saving..
+
+Epoch: 6
+Epoch, Training accuracy, Test Accuracy 6 75.884 75.15
+
+Epoch: 7
+Epoch, Training accuracy, Test Accuracy 7 77.5 75.52
+
+Epoch: 8
+Epoch, Training accuracy, Test Accuracy 8 78.492 78.64
+Saving..
+
+Epoch: 9
+Epoch, Training accuracy, Test Accuracy 9 79.704 75.75
+
+Epoch: 10
+Epoch, Training accuracy, Test Accuracy 10 80.258 79.21
+Saving..
+
+Epoch: 11
+Epoch, Training accuracy, Test Accuracy 11 80.982 79.65
+Saving..
+
+Epoch: 12
+Epoch, Training accuracy, Test Accuracy 12 81.874 79.3
+
+Epoch: 13
+Epoch, Training accuracy, Test Accuracy 13 82.542 80.13
+Saving..
+
+Epoch: 14
+Epoch, Training accuracy, Test Accuracy 14 83.22 80.55
+Saving..
+
+Epoch: 15
+Epoch, Training accuracy, Test Accuracy 15 83.53 79.26
+
+Epoch: 16
+Epoch, Training accuracy, Test Accuracy 16 84.264 81.01
+Saving..
+
+Epoch: 17
+Epoch, Training accuracy, Test Accuracy 17 84.524 82.85
+Saving..
+
+Epoch: 18
+Epoch, Training accuracy, Test Accuracy 18 84.954 83.12
+Saving..
+
+Epoch: 19
+Epoch, Training accuracy, Test Accuracy 19 85.282 82.46
+
+Epoch: 20
+Epoch, Training accuracy, Test Accuracy 20 85.854 83.44
+Saving..
+
+Epoch: 21
+Epoch, Training accuracy, Test Accuracy 21 86.186 81.81
+
+Epoch: 22
+Epoch, Training accuracy, Test Accuracy 22 86.314 82.86
+
+Epoch: 23
+Epoch, Training accuracy, Test Accuracy 23 86.838 83.41
+
+Epoch: 24
+Epoch, Training accuracy, Test Accuracy 24 87.18 83.19
+
+Epoch: 25
+Epoch, Training accuracy, Test Accuracy 25 87.66 83.92
+Saving..
+
+Epoch: 26
+Epoch, Training accuracy, Test Accuracy 26 87.558 82.88
+
+Epoch: 27
+Epoch, Training accuracy, Test Accuracy 27 88.094 83.7
+
+Epoch: 28
+Epoch, Training accuracy, Test Accuracy 28 88.126 84.09
+Saving..
+
+Epoch: 29
+Epoch, Training accuracy, Test Accuracy 29 88.534 84.13
+Saving..
+
+Epoch: 30
+Epoch, Training accuracy, Test Accuracy 30 88.642 84.18
+Saving..
+
+Epoch: 31
+Epoch, Training accuracy, Test Accuracy 31 88.948 84.61
+Saving..
+
+Epoch: 32
+Epoch, Training accuracy, Test Accuracy 32 89.022 84.64
+Saving..
+
+Epoch: 33
+Epoch, Training accuracy, Test Accuracy 33 89.346 84.2
+
+Epoch: 34
+Epoch, Training accuracy, Test Accuracy 34 89.496 84.43
+
+Epoch: 35
+Epoch, Training accuracy, Test Accuracy 35 89.828 84.12
+
+Epoch: 36
+Epoch, Training accuracy, Test Accuracy 36 90.014 84.95
+Saving..
+
+Epoch: 37
+Epoch, Training accuracy, Test Accuracy 37 90.158 85.57
+Saving..
+
+Epoch: 38
+Epoch, Training accuracy, Test Accuracy 38 90.492 84.88
+
+Epoch: 39
+Epoch, Training accuracy, Test Accuracy 39 90.28 84.55
+
+Epoch: 40
+Epoch, Training accuracy, Test Accuracy 40 90.554 84.85
+
+Epoch: 41
+Epoch, Training accuracy, Test Accuracy 41 90.862 84.94
+
+Epoch: 42
+Epoch, Training accuracy, Test Accuracy 42 91.026 85.8
+Saving..
+
+Epoch: 43
+Epoch, Training accuracy, Test Accuracy 43 91.136 85.53
+
+Epoch: 44
+Epoch, Training accuracy, Test Accuracy 44 91.462 85.45
+
+Epoch: 45
+Epoch, Training accuracy, Test Accuracy 45 91.174 84.38
+
+Epoch: 46
+Epoch, Training accuracy, Test Accuracy 46 91.676 85.47
+
+Epoch: 47
+Epoch, Training accuracy, Test Accuracy 47 91.838 85.02
+
+Epoch: 48
+Epoch, Training accuracy, Test Accuracy 48 91.884 84.42
+
+Epoch: 49
+Epoch, Training accuracy, Test Accuracy 49 92.012 85.9

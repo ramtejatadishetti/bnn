@@ -8,11 +8,11 @@ from torch.autograd import Variable
 import torch.optim as optim
 import torch.nn.functional as F
 import random
-
+import argparse
 import torchvision
 import os
 import torchvision.transforms as transforms
-from utils import progress_bar
+#from utils import progress_bar
 from custom import *
 
 random.seed(1)
@@ -32,17 +32,22 @@ cfg = {
 }
 
 
+
+#parser = argparse.ArgumentParser(description='PyTorch CIFAR10')
+#parser.add_argument('--batch', action='store_true', default=False,
+#                            help='disables CUDA training')
+
+
 class VGG(nn.Module):
-    def __init__(self, vgg_name='VGG11', bin = False, stochastic = False, quantization=2):
+    def __init__(self, vgg_name='VGG11', bin = False, stochastic = False):
         super(VGG, self).__init__()
         self.bin = bin
         self.stochastic = stochastic
-        self.quantization = quantization
         self.features = self._make_layers(cfg[vgg_name])
         if(not self.bin):
             self.classifier = nn.Linear(512, 10)
         else:
-            self.classifier = NewBinaryLayer(512, 10, stochastic=self.stochastic,quantization=self.quantization)
+            self.classifier = NewBinaryLayer(512, 10, stochastic=self.stochastic)
 
     def forward(self, x):
         out = self.features(x)
@@ -60,7 +65,7 @@ class VGG(nn.Module):
                     layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
             else:
                 if(self.bin):
-                    layers += [NewBinaryConv2D(in_channels, x, self.stochastic, quantization=self.quantization, kernel_size=3, padding=1),nn.BatchNorm2d(x),BintanH()]
+                    layers += [NewBinaryConv2D(in_channels, x, self.stochastic, kernel_size=3, padding=1),nn.BatchNorm2d(x),BintanH()]
                 else:
                     layers += [nn.Conv2d(in_channels, x, kernel_size=3, padding=1),nn.BatchNorm2d(x),nn.Tanh()]
                 in_channels = x
@@ -142,22 +147,23 @@ if __name__ == "__main__":
     ])
 
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=2)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=1000, shuffle=True, num_workers=2)
 
     testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=1000, shuffle=False, num_workers=2)
 
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
     #bd_layer = BinaryLayer(3, 4, 1, True)
 
     net = VGG('VGG11',bin =True)
+    net = net.cuda()
     print(net) 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
 
     start_epoch = 1
-    end_epoch = 41
+    end_epoch = 100
     best_acc = 0
 
     for epoch in range(start_epoch, end_epoch):
@@ -175,7 +181,7 @@ if __name__ == "__main__":
 
         for batch_idx, (inputs, targets) in enumerate(trainloader):
             optimizer.zero_grad()
-            inputs, targets = Variable(inputs), Variable(targets)
+            inputs, targets = Variable(inputs).cuda(), Variable(targets).cuda()
             outputs = net(inputs)
 
             #loss = torch.mean(torch.max(0., 1. - outputs.data.numpy()*targets.data.numpy())**2)
@@ -189,8 +195,8 @@ if __name__ == "__main__":
             total += targets.size(0)
             correct += predicted.eq(targets.data).cpu().sum()
 
-            progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+            #progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+            #    % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
         
         train_acc = 100.*correct/total
 
@@ -200,7 +206,7 @@ if __name__ == "__main__":
         total = 0
         for batch_idx, (inputs, targets) in enumerate(testloader):
 
-            inputs, targets = Variable(inputs, volatile=True), Variable(targets)
+            inputs, targets = Variable(inputs, volatile=True).cuda(), Variable(targets).cuda()
             outputs = net(inputs)
             loss = criterion(outputs, targets)
 
@@ -209,8 +215,8 @@ if __name__ == "__main__":
             total += targets.size(0)
             correct += predicted.eq(targets.data).cpu().sum()
 
-            progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+            #progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+            #   % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
         
         test_acc = 100.*correct/total 
         print("Epoch, Training accuracy, Test Accuracy", epoch, train_acc, test_acc)
@@ -226,3 +232,26 @@ if __name__ == "__main__":
                 os.mkdir('checkpoint')
             torch.save(state, './checkpoint/ckpt.t7')
             best_acc = acc
+        
+        
+    '''
+    mynet = MyNetwork()
+    print(mynet) 
+
+    params = list(mynet.parameters())
+    print(len(params))
+    
+    [print(i) for i in params ]
+
+    
+    optimizer = ClippedOptimizer(bd_layer.parameters(),1, 0.01, True)
+    optimizer.zero_grad()
+    criterion = nn.MSELoss()
+
+    output = bd_layer.forward(inp)
+
+    loss = criterion(output, target)
+    loss.backward()
+
+    optimizer.step()
+    '''

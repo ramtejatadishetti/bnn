@@ -11,7 +11,7 @@ import copy
 from MnistNet import *
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
-parser.add_argument('--batch-size', type=int, default=64, metavar='N',
+parser.add_argument('--batch-size', type=int, default=256, metavar='N',
                     help='input batch size for training (default: 10000)')
 parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                     help='input batch size for testing (default: 1000)')
@@ -35,7 +35,7 @@ if args.cuda:
     torch.cuda.manual_seed(args.seed)
 
 
-kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
+kwargs = {'num_workers': 2, 'pin_memory': True} if args.cuda else {}
 train_loader = torch.utils.data.DataLoader(
     datasets.MNIST('../data', train=True, download=True,
                    transform=transforms.Compose([
@@ -154,7 +154,7 @@ class ThreeLayerNet(nn.Module):
 #ST, DET
 # model = SimpleNet(True, False)
 
-model = MNISTNET(True)
+model = MNISTNET(True,True)
 if args.cuda:
     model.cuda()
 
@@ -165,11 +165,10 @@ def train(epoch):
     for batch_idx, (data, target) in enumerate(train_loader):
         if args.cuda:
             data, target = data.cuda(), target.cuda()
-        else:
-            data, target = Variable(data), Variable(target)
+        data, target = Variable(data), Variable(target)
         optimizer.zero_grad()
         output = model(data)
-        loss = F.nll_loss(output, target)
+        loss = F.hinge_embedding_loss(output, target)
         loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
@@ -187,7 +186,7 @@ def test():
         else:
             data, target = Variable(data, volatile=True), Variable(target)
         output = model(data)
-        test_loss += F.nll_loss(output, target, size_average=False).data[0] # sum up batch loss
+        test_loss += F.hinge_embedding_loss(output, target, size_average=False).data[0] # sum up batch loss
         pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
         correct += pred.eq(target.data.view_as(pred)).cpu().sum()
 
@@ -196,7 +195,27 @@ def test():
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
 
+def trainacc():
+    model.eval()
+    test_loss = 0
+    correct = 0
+    for data, target in train_loader:
+        if args.cuda:
+            data, target = data.cuda(), target.cuda()
+        else:
+            data, target = Variable(data, volatile=True), Variable(target)
+        output = model(data)
+        test_loss += F.hinge_embedding_loss(output, target, size_average=False).data[0] # sum up batch loss
+        pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
+        correct += pred.eq(target.data.view_as(pred)).cpu().sum()
+
+    test_loss /= len(train_loader.dataset)
+    print('\Training set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        test_loss, correct, len(train_loader.dataset),
+        100. * correct / len(train_loader.dataset)))
+
 
 for epoch in range(1, args.epochs + 1):
     train(epoch)
     test()
+    trainacc()

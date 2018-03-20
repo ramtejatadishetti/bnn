@@ -16,8 +16,9 @@ def binarize(W, stochastic=False):
     x = copy.deepcopy(W.data)
     y = torch.clamp(x, -1, 1)
     x = hard_sigmoid(y)
+    m = copy.deepcopy(x)
     if(stochastic):
-        x = torch.bernoulli(x)
+        x = torch.bernoulli(m)
     else:
         x = torch.round(x)
     x[x==0] = -1

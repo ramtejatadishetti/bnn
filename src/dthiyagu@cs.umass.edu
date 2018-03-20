@@ -4,8 +4,6 @@ class MNISTNET(nn.Module):
     def __init__(self, bin = False, stochastic = False):
         super(MNISTNET, self).__init__()
         self.bin = bin
-        self.bin_act = False
-
         self.stochastic = stochastic
         self.features1 = self._make_layers()
         self.features2 = self._make_layers()
@@ -21,28 +19,28 @@ class MNISTNET(nn.Module):
 
     def forward(self, x):
         x = x.view(x.size(0), -1)
-        if(self.bin_act):
+        if(self.bin):
             x = BinarytanH().forward(self.bn1(self.fc1(x)))
         else:
-            x = F.relu(self.bn1(self.fc1(x)))
+            x = F.tanh(self.bn1(self.fc1(x)))
         out = self.features1(x)
-        if(self.bin_act):
-            out = BinarytanH().forward(out)
+        if(self.bin):
+            x = BinarytanH().forward(out)
         else:
-            out = F.relu(out)
-        # out = self.features2(out)
-        # if(self.bin_act):
-        #     out = BinarytanH().forward(out)
-        # else:
-        #     out = F.relu(out)
-        # out = self.features3(out)
-        # if(self.bin_act):
-        #     out = BinarytanH().forward(out)
-        # else:
-        #     out = F.relu(out)
+            x = F.tanh(out)
+        out = self.features2(out)
+        if(self.bin):
+            x = BinarytanH().forward(out)
+        else:
+            x = F.tanh(out)
+        out = self.features3(out)
+        if(self.bin):
+            x = BinarytanH().forward(out)
+        else:
+            x = F.tanh(out)
         out = self.classifier(out)
         out = self.bn(out)
-        return (out)
+        return F.log_softmax(out)
 
     def _make_layers(self):
         layers = []
